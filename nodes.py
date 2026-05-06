@@ -1249,7 +1249,7 @@ class TektiteVideoCombiner9:
 
         raw = (output_path or "").strip()
         if not raw:
-            raw = os.path.join("tektite", "stitched", f"stitched_{stamp}.{output_format}")
+            raw = f"stitched_{stamp}.{output_format}"
 
         expanded = os.path.expanduser(raw)
         if not os.path.isabs(expanded):

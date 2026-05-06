@@ -16,6 +16,10 @@ Standalone ComfyUI custom node variant with a new class name so it can be instal
 - `video` (VIDEO)
 - `path` (STRING)
 
+## Output Path
+- Leave `output_path` empty to write `stitched_TIMESTAMP.ext` directly into the normal ComfyUI output folder.
+- Set `output_path` to a folder or file path when you want to control the destination.
+
 ## Install
 1. Copy this folder into `ComfyUI/custom_nodes/`
 2. Restart ComfyUI
