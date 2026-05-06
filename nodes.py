@@ -1054,7 +1054,29 @@ class TektiteVideoCombiner9:
                     c.write(f"file '{ep}'\n")
 
             overwrite_flag = "-y" if overwrite else "-n"
-            # Always re-encode to normalize timestamps/timebase and avoid freeze/black-frame artifacts.
+            copy_cmd = [
+                ffmpeg_path,
+                overwrite_flag,
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                concat_list_path,
+                "-map",
+                "0:v:0",
+                "-c:v",
+                "copy",
+                "-avoid_negative_ts",
+                "make_zero",
+                resolved_output,
+            ]
+            copy_cmd = [str(x) for x in copy_cmd]
+            copy_result = subprocess.run(copy_cmd, capture_output=True, text=True)
+            if copy_result.returncode == 0:
+                return resolved_output
+
+            # Fallback: re-encode without forcing another CFR/rate conversion.
             reencode_cmd = [
                 ffmpeg_path,
                 overwrite_flag,
@@ -1066,10 +1088,6 @@ class TektiteVideoCombiner9:
                 "+genpts",
                 "-i",
                 concat_list_path,
-                "-fps_mode",
-                "cfr",
-                "-r",
-                str(float(target_fps)),
                 "-map",
                 "0:v:0",
                 "-c:v",
@@ -1087,6 +1105,8 @@ class TektiteVideoCombiner9:
             if reencode_result.returncode != 0:
                 raise RuntimeError(
                     "FFmpeg stitch failed.\n"
+                    f"Copy attempt:\n{copy_result.stderr.strip()}\n\n"
+                    "Re-encode attempt:\n"
                     f"{reencode_result.stderr.strip()}"
                 )
 
@@ -1125,11 +1145,9 @@ class TektiteVideoCombiner9:
             "0:v:0",
             "-an",
             "-vf",
-            f"fps={float(target_fps)},format=yuv420p",
+            f"setpts=N/({float(target_fps)}*TB),format=yuv420p",
             "-fps_mode",
-            "cfr",
-            "-r",
-            str(float(target_fps)),
+            "passthrough",
             "-c:v",
             video_codec,
             "-preset",
